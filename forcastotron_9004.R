@@ -92,6 +92,8 @@ updated_boxoffice$movie <- gsub(" $","",updated_boxoffice$movie)
 # GET MOVIE BUX ####
 fml <- "https://fantasymovieleague.com/researchvault?section=box-office"
 fml_table <- GET(fml) %>% read_html() %>% html_nodes(".movie-title--with-cost-and-image a") %>% html_text() %>% data.frame()
+fml_table2 <- GET(fml) %>% read_html() %>% html_nodes(".movie-title--with-cost-and-image+ td") %>% html_text() %>% data.frame()
+fml_table <- cbind(fml_table,fml_table2)
 colnames(fml_table)[1] <- "name"
 fml_table$bux <- gsub("^.*[FB$]","",fml_table$name)
 fml_table$movie <- gsub("FB\\$\\d*$","",fml_table$name)
@@ -100,7 +102,7 @@ fml_table$movie <- gsub("[[:punct:]]","",fml_table$movie)
 fml_table$movie <- gsub("– ","",fml_table$movie)
 fml_table$name <- NULL
 fml_table$movie <- tolower(fml_table$movie)
-
+fml_table$. <- ifelse(fml_table$. == "-","new","old")
 
 # GET MOVIES IN THEATERS' DATA
 
@@ -153,6 +155,8 @@ meta_data$movie <- clean_title(meta_data$movie)
 
 # BEGIN MOVIE FORECASTING ####
 movies_with_data <- now_playing %>% group_by(movie) %>% summarize(min_date = min(date)) %>%  filter(min_date<=(weekend_dates[1]-days(7)))
+
+movies_with_data <- now_playing %>% group_by(movie) %>% summarize(min_date = min(date)) %>%  filter(min_date<=(weekend_dates[1]-days(7)) & year(min_date)==year(Sys.Date()))
 movies_with_data <- movies_with_data$movie
 movies_to_forecast <- subset(now_playing, movie %in% movies_with_data) 
 
